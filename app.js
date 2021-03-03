@@ -87,19 +87,28 @@ app.route('/login')
     })
 
     .post(function(req, res){
-
-        const user = new User({
-            username: req.body.username,
-            password: req.body.password
-        });
-
-        req.login(user, function(err){
-            if (err){
-                conosle.log(err);
-            } else {
-                passport.authenticate('local')(req, res, function(){
-                    res.redirect('/secrets');
+        User.findOne({username: req.body.username}, function(err, foundUser){
+            if (foundUser){
+                const user = new User({
+                    username: req.body.username,
+                    password: req.body.password
                 });
+
+                passport.authenticate('local', function(err, user){
+                    if (err){
+                        console.log(err);
+                    } else {
+                        if (user){
+                            req.login(user, function(err){
+                                res.redirect('/secrets');
+                            });
+                        } else {
+                            res.redirect('/login');
+                        }
+                    }
+                })(req, res);
+            } else {
+                res.redirect('/login');
             }
         });
     });
