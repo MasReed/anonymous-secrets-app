@@ -1,7 +1,10 @@
+
+require('dotenv').config();
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const express = require('express');
 const mongoose = require('mongoose');
+const encrypt = require('mongoose-encryption');
 
 const port = 3000;
 
@@ -16,12 +19,16 @@ app.use(express.static('public'));
 
 
 // MongoDB Connection & Schemas ////////////////////////////////////////////////
+
+// Connection uri
 mongoose.connect('mongodb://localhost:27017/userDB', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
 
-const userSchema = {
+
+// Schema
+const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true
@@ -30,8 +37,14 @@ const userSchema = {
         type: String,
         required: true
     }
-}
+});
 
+
+// Encryption, extends schema with mongoose-encrypt package
+userSchema.plugin(encrypt, { secret: process.env.DB_ENCRYPT, encryptedFields: ['password'] });
+
+
+// Document model
 const User = new mongoose.model('User', userSchema);
 
 
