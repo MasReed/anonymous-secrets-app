@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
     password: String,
     googleId: String,
     facebookId: String,
-    secret: String
+    secrets: [String]
 });
 
 
@@ -64,7 +64,7 @@ userSchema.plugin(findOrCreate);
 const User = new mongoose.model('User', userSchema);
 
 
-// Passport config with passport-local-mongoose methods
+// PASSPORT CONFIG (with passport-local-mongoose methods) //////////////////////
 passport.use(User.createStrategy());
 
 passport.serializeUser(function(user, done) {
@@ -103,9 +103,6 @@ passport.use(new FacebookStrategy({
     },
 
     function(accessToken, refreshToken, profile, cb){
-
-        console.log(profile);
-
         User.findOrCreate({
             facebookId: profile.id
         }, function(err, user){
@@ -224,11 +221,28 @@ app.route('/register')
 
 // Secrets route
 app.get('/secrets', function(req, res) {
-    User.find({'secret': {$ne: null}}, function(err, foundUsers){
+
+    // Compose list of all secrets from all users
+    User.find({'secrets': {$exists: true, $not: {$size: 0} } }, function(err, foundUsers){
         if (err){
             console.log(err);
         } else {
-            res.render('secrets.ejs', {usersWithSecrets: foundUsers});
+
+            const allSecrets = [];
+
+            foundUsers.forEach(function(user){
+                user.secrets.forEach(function(secret){
+                    allSecrets.push(secret);
+                });
+            });
+
+            // Shuffle array // TODO: modularize
+            for (let i = allSecrets.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allSecrets[i], allSecrets[j]] = [allSecrets[j], allSecrets[i]];
+            }
+            
+            res.render('secrets.ejs', {allSecrets: allSecrets});
         }
     });
 });
@@ -253,7 +267,7 @@ app.route('/submit')
                 console.log(err);
             } else {
                 if (foundUser){
-                    foundUser.secret = submittedSecret;
+                    foundUser.secrets.push(submittedSecret);
                     foundUser.save(function(){
                         res.redirect('/secrets');
                     });
