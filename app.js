@@ -42,7 +42,7 @@ app.use(passport.session());
 // MONGODB CONNECTIONS & SCHEMA ////////////////////////////////////////////////
 
 // Database uri
-mongoose.connect('mongodb://localhost:27017/userDB', {
+mongoose.connect(process.env.MONGO_CLUSTER, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true
